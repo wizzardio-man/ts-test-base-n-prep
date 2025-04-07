@@ -1,0 +1,48 @@
+name: Run Mocha Tests
+
+on:
+  # Automatically run on PRs to main
+  pull_request:
+    branches:
+      - main
+
+  # Allow manual workflow trigger
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Choose the environment"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - qa
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    # Use 'qa' environment for PRs, or the one chosen manually
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.env || 'qa' }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Mocha tests
+        run: npx mocha --reporter spec
+
+      - name: Show environment info (for debugging)
+        run: |
+          echo "Running in environment: ${{ github.event.inputs.env || 'qa' }}"
+          echo "Base URL: ${{ vars.BASE_URL }}"
+          echo "API Key: ${{ secrets.API_KEY }}"
